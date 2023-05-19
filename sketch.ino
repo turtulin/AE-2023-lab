@@ -46,7 +46,7 @@ void readDHT22(uint8_t pin) {
     while (PIND & (1 << pin));
     uint16_t durationHigh = micros() - startMicros;
 
-    if(durationHigh > 50) {
+    if(durationHigh > 48) {
       data[byteIndex] |= (1 << bitIndex);
     }
 
@@ -80,4 +80,3 @@ void readDHT22(uint8_t pin) {
    Serial.print(temperature);
    Serial.println("°C");
 }
-
