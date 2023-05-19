@@ -21,47 +21,43 @@ void readDHT22(uint8_t pin) {
   uint8_t bitIndex = 7;
   uint8_t byteIndex = 0;
   
-  DDRD |= (1 << pin);     //output
-  PORTD &= ~(1 << pin);   //low
-  _delay_ms(1);
+  DDRD |= (1 << pin);
+  PORTD &= ~(1 << pin);
+  delayMicroseconds(1000);
   PORTD |= (1 << pin);
   DDRD &= ~(1 << pin);
-  _delay_us(40);
+  delayMicroseconds(40);
   
   if (PIND & (1 << pin)) {
     Serial.println("No response from sensor");
     return;
   }
 
-  _delay_us(80);
+  delayMicroseconds(80);
   
   if (!(PIND & (1 << pin))) {
     Serial.println("No response from sensor");
     return;
   }
   
-  TCCR1A = 0;
-  TCCR1B = (1 << CS11);
-  
-  for (int i = 0; i < (80); i +=2) {
+  for(int i = 0; i < (40); i++) {
     while (!(PIND & (1 << pin)));
-    TCNT1 = 0;
+    uint32_t startMicros = micros();
     while (PIND & (1 << pin));
-    uint16_t pulseLength = TCNT1;
-    
-    if (pulseLength > (F_CPU / (1000000 *8) *80)) {
+    uint16_t durationHigh = micros() - startMicros;
+
+    if(durationHigh > 50) {
       data[byteIndex] |= (1 << bitIndex);
     }
-    
-    if (bitIndex == 0) {
-      bitIndex =7;
+
+    if(bitIndex == 0) {
+      bitIndex = 7;
       byteIndex++;
-    } else {
+    }
+    else {
       bitIndex--;
     }
-   }
-   
-   TCCR1B =0;
+  }
    
    uint8_t checksum = data[0] + data[1] + data[2] + data[3];
    
@@ -85,28 +81,3 @@ void readDHT22(uint8_t pin) {
    Serial.println("°C");
 }
 
-
-/*void myPinMode(uint8_t pin, uint8_t mode) {
-  if (mode == INPUT) {
-    *ddrReg &= ~(1 << bitNum);
-  } else if (mode == OUTPUT) {
-    *ddrReg |= (1 << bitNum);
-  }
-}
-
-uint8_t myDigitalRead(uint8_t pin) {
-  pinState = (*pinReg) & (1 << bitNum);
-  return (pinState > 0) ? HIGH : LOW;
-}
-
-void myDigitalWrite(uint8_t pin, uint8_t value) {
-  if (value == LOW) {
-    *portReg &= ~(1 << bitNum);
-  } else if (value == HIGH) {
-    *portReg |= (1 << bitNum);
-  }
-
-
-  #define DHTPIN 2 // Pin connected to the DHT22 sensor
-#define DHTTYPE DHT22 // DHT22 sensor
-*/
