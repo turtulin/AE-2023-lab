@@ -17,24 +17,15 @@ void loop() {
 
 
 void readDHT22(uint8_t pin) {
-  DDRD |= (1 << pin);
-  PORTD &= ~(1 << pin);
-  delayMicroseconds(1000);
-  PORTD |= (1 << pin);
-  DDRD &= ~(1 << pin);
-  delayMicroseconds(40);
-  
-  if (PIND & (1 << pin)) {
-    Serial.println("No response from sensor");
-    return;
-  }
 
-  delayMicroseconds(80);
-  
-  if (!(PIND & (1 << pin))) {
-    Serial.println("No response from sensor");
-    return;
-  }
+  pinMode(pin, INPUT_PULLUP);
+  delay(1);
+  pinMode(pin, OUTPUT);
+  digitalWrite(pin, LOW);
+  delayMicroseconds(1100);
+  pinMode(pin, INPUT_PULLUP);
+
+
 
   // Read the DHT22 sensor data
   uint8_t data[5] = {0, 0, 0, 0, 0};
@@ -42,11 +33,15 @@ void readDHT22(uint8_t pin) {
   for (int i = 0; i < 5; i++) {
     for (int j = 7; j >= 0; j--) {
       while (!(PIND & (1 << pin)));
-      delayMicroseconds(30);
-      if (PIND & (1 << pin)) {
+      uint64_t startHigh = micros();
+      while (PIND & (1 << pin));
+      uint32_t durationHigh = micros() - startHigh;
+      if(durationHigh >= 68 && durationHigh <= 72) {
         data[i] |= (1 << j);
       }
-      delayMicroseconds(48);
+      /*if (PIND & (1 << pin)) {
+        data[i] |= (1 << j);
+      }*/
     }
   }
 
@@ -55,13 +50,13 @@ void readDHT22(uint8_t pin) {
     Serial.println("Checksum error");
   }
 
-  humidity = ((data[0] << 8) + data[1]) / 10.0;
-  temperature = (((data[2] & 0x7F) << 8) + data[3]) / 10.0;
+  humidity = ((data[0] << 8) | data[1]) / 10.0;
+  temperature = (((data[2] & 0x7F) << 8) | data[3]) / 10.0;
   if (data[2] & 0x80) {
     temperature = -temperature;
   }
 
-  Serial.println(humidity);
+  Serial.println(humidity * 4);
   Serial.println(temperature);
   Serial.println(data[0]);
   Serial.println(data[1]);
