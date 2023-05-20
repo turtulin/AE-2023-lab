@@ -1,5 +1,6 @@
-#define myPinMode(n,mode) (mode == OUTPUT? (DDRD |= (1 << n)) : (DDRD &= ~(1 << n))); \
-(mode == INPUT_PULLUP? (PORTD |= (1 << n)) : (NULL));
+#define myPinMode(n,mode) (mode == OUTPUT? (DDRD |= (1<<n)) : (DDRD &= ~(1<<n))); \
+(mode == INPUT_PULLUP? (PORTD |= (1<<n)) : (NULL));
+#define myDigitalWrite(n,level) (level == HIGH? (PORTD |= (1<<n)) : (PORTD &= ~(1<<n)));
 //avrei potuto usare la macro _BV invece di 1<<n
 
 #define DHT22_PIN 2
@@ -9,13 +10,10 @@ float humidity = 0;
 
 void setup() {
   Serial.begin(9600);
-  DDRD &= ~(1 << DHT22_PIN);
-  PORTD |= (1 << DHT22_PIN); // Enable pull-up resistor
-  delayMicroseconds(2000); // Delay to allow the sensor to stabilize
 }
 
 void loop() {
-  delay(6000);
+  delay(5000);
   readDHT22(DHT22_PIN);
 }
 
@@ -25,7 +23,7 @@ void readDHT22(uint8_t pin) {
   myPinMode(pin, INPUT_PULLUP);
   delay(1);
   myPinMode(pin, OUTPUT);
-  digitalWrite(pin, LOW);
+  myDigitalWrite(pin, LOW);
   delayMicroseconds(1100);
   myPinMode(pin, INPUT_PULLUP);
 
