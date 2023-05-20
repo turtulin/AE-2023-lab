@@ -1,7 +1,18 @@
-#define myPinMode(n,mode) (mode == OUTPUT? (DDRD |= (1<<n)) : (DDRD &= ~(1<<n))); \
+#include "wiring_private.h"
+
+#define MICROSECONDS_PER_TIMER0_OVERFLOW (clockCyclesToMicroseconds(64 * 256))
+#define MILLIS_INC (MICROSECONDS_PER_TIMER0_OVERFLOW / 1000)
+#define FRACT_INC ((MICROSECONDS_PER_TIMER0_OVERFLOW % 1000) >> 3)
+#define FRACT_MAX (1000 >> 3)
+
+extern volatile unsigned long timer0_overflow_count;
+extern volatile unsigned long timer0_millis;
+unsigned char timer0_fract;
+
+#define myPinMode(n,mode) (mode == OUTPUT? (DDRD |= (1<<n)) : (DDRD &= ~(1<<n))); \ 
 (mode == INPUT_PULLUP? (PORTD |= (1<<n)) : (NULL));
 #define myDigitalWrite(n,level) (level == HIGH? (PORTD |= (1<<n)) : (PORTD &= ~(1<<n)));
-//avrei potuto usare la macro _BV invece di 1<<n
+//could use _BV instead of 1<<n
 
 #define DHT22_PIN 2
 
@@ -10,6 +21,7 @@ float humidity = 0;
 
 void setup() {
   Serial.begin(9600);
+  Serial.println(MICROSECONDS_PER_TIMER0_OVERFLOW / 1000);
 }
 
 void loop() {
@@ -27,9 +39,6 @@ void readDHT22(uint8_t pin) {
   delayMicroseconds(1100);
   myPinMode(pin, INPUT_PULLUP);
 
-
-
-  // Read the DHT22 sensor data
   uint8_t data[5] = {0, 0, 0, 0, 0};
 
   cli();
@@ -42,15 +51,12 @@ void readDHT22(uint8_t pin) {
       if(durationHigh >= 68 && durationHigh <= 72) {
         data[i] |= (1 << j);
       }
-      /*if (PIND & (1 << pin)) {
-        data[i] |= (1 << j);
-      }*/
     }
   }
   sei();
 
   uint8_t checksum = data[0] + data[1] + data[2] + data[3];
-  if (checksum != data[4]) {
+  if ((checksum & 0xFF) != data[4]) {
     Serial.println("Checksum error");
   }
 
@@ -67,4 +73,20 @@ void readDHT22(uint8_t pin) {
   Serial.println(data[2]);
   Serial.println(data[3]);
   Serial.println(data[4]);
+}
+
+ISR(TIMERO_COMPB_vect) {
+	unsigned long m = timer0_millis;
+	unsigned char f = timer0_fract;
+
+	m += MILLIS_INC;
+	f += FRACT_INC;
+	if (f >= FRACT_MAX) {
+		f -= FRACT_MAX;
+		m += 1;
+	}
+
+	timer0_fract = f;
+	timer0_millis = m;
+	timer0_overflow_count++;
 }
