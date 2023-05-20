@@ -1,3 +1,7 @@
+#define myPinMode(n,mode) (mode == OUTPUT? (DDRD |= (1 << n)) : (DDRD &= ~(1 << n))); \
+(mode == INPUT_PULLUP? (PORTD |= (1 << n)) : (NULL));
+//avrei potuto usare la macro _BV invece di 1<<n
+
 #define DHT22_PIN 2
 
 float temperature = 0;
@@ -18,18 +22,19 @@ void loop() {
 
 void readDHT22(uint8_t pin) {
 
-  pinMode(pin, INPUT_PULLUP);
+  myPinMode(pin, INPUT_PULLUP);
   delay(1);
-  pinMode(pin, OUTPUT);
+  myPinMode(pin, OUTPUT);
   digitalWrite(pin, LOW);
   delayMicroseconds(1100);
-  pinMode(pin, INPUT_PULLUP);
+  myPinMode(pin, INPUT_PULLUP);
 
 
 
   // Read the DHT22 sensor data
   uint8_t data[5] = {0, 0, 0, 0, 0};
 
+  cli();
   for (int i = 0; i < 5; i++) {
     for (int j = 7; j >= 0; j--) {
       while (!(PIND & (1 << pin)));
@@ -44,6 +49,7 @@ void readDHT22(uint8_t pin) {
       }*/
     }
   }
+  sei();
 
   uint8_t checksum = data[0] + data[1] + data[2] + data[3];
   if (checksum != data[4]) {
@@ -57,7 +63,7 @@ void readDHT22(uint8_t pin) {
   }
 
   Serial.println(humidity * 4);
-  Serial.println(temperature);
+  Serial.println(temperature * 4);
   Serial.println(data[0]);
   Serial.println(data[1]);
   Serial.println(data[2]);
