@@ -1,5 +1,4 @@
-#include "wiring_private.h"
-
+/*
 #define MICROSECONDS_PER_TIMER0_OVERFLOW (clockCyclesToMicroseconds(64 * 256))
 #define MILLIS_INC (MICROSECONDS_PER_TIMER0_OVERFLOW / 1000)
 #define FRACT_INC ((MICROSECONDS_PER_TIMER0_OVERFLOW % 1000) >> 3)
@@ -8,75 +7,87 @@
 extern volatile unsigned long timer0_overflow_count;
 extern volatile unsigned long timer0_millis;
 unsigned char timer0_fract;
+*/
 
-#define myPinMode(n,mode) (mode == OUTPUT? (DDRD |= (1<<n)) : (DDRD &= ~(1<<n))); \ 
-(mode == INPUT_PULLUP? (PORTD |= (1<<n)) : (NULL));
-#define myDigitalWrite(n,level) (level == HIGH? (PORTD |= (1<<n)) : (PORTD &= ~(1<<n)));
-//could use _BV instead of 1<<n
+#include "wiring_private.h"
 
 #define DHT22_PIN 2
+#define myDigitalWrite(n,level) (level == HIGH? (PORTD |= myBit) : (PORTD &= ~myBit))
+#define myPinMode(n,mode) (mode == OUTPUT? (DDRD |= myBit) : (DDRD &= ~myBit)); \ 
+(mode == INPUT_PULLUP? (PORTD |= (1<<n)) : (NULL))
 
 float temperature = 0;
 float humidity = 0;
+//uint32_t myMillis = 0;
+uint8_t myBit = (1 << DHT22_PIN);
+
+int myDigitalRead(uint8_t pin) {
+	if (*portInputRegister(PORTD) & myBit) return HIGH;
+	return LOW;
+}
 
 void setup() {
   Serial.begin(9600);
-  Serial.println(MICROSECONDS_PER_TIMER0_OVERFLOW / 1000);
+  //TIMSK0 = 0x4;
 }
 
 void loop() {
-  delay(5000);
+  delay(3000);
   readDHT22(DHT22_PIN);
 }
 
 
 void readDHT22(uint8_t pin) {
-
-  myPinMode(pin, INPUT_PULLUP);
-  delay(1);
-  myPinMode(pin, OUTPUT);
-  myDigitalWrite(pin, LOW);
-  delayMicroseconds(1100);
-  myPinMode(pin, INPUT_PULLUP);
-
   uint8_t data[5] = {0, 0, 0, 0, 0};
 
-  cli();
-  for (int i = 0; i < 5; i++) {
-    for (int j = 7; j >= 0; j--) {
-      while (!(PIND & (1 << pin)));
-      uint64_t startHigh = micros();
-      while (PIND & (1 << pin));
-      uint32_t durationHigh = micros() - startHigh;
-      if(durationHigh >= 68 && durationHigh <= 72) {
-        data[i] |= (1 << j);
-      }
-    }
-  }
-  sei();
+  myPinMode(pin, OUTPUT);             
+  myDigitalWrite(pin, LOW);           
+  delayMicroseconds(1000);           
+  myDigitalWrite(pin, HIGH);          
+  delayMicroseconds(40);             
 
-  uint8_t checksum = data[0] + data[1] + data[2] + data[3];
-  if ((checksum & 0xFF) != data[4]) {
-    Serial.println("Checksum error");
-  }
+  myPinMode(pin, INPUT);              
+  while(myDigitalRead(pin));          
+  while(!myDigitalRead(pin));         
+  while(myDigitalRead(pin));      
 
-  humidity = ((data[0] << 8) | data[1]) / 10.0;
-  temperature = (((data[2] & 0x7F) << 8) | data[3]) / 10.0;
+  data[0] = readDHT22byte();       
+  data[1] = readDHT22byte();        
+  data[2] = readDHT22byte();
+  data[3] = readDHT22byte();      
+  data[4] = readDHT22byte();     
+
+
+  humidity  = (data[0] << 8) | data[1];
+  temperature = (data[2] & 0x7F) << 8 | data[3];
   if (data[2] & 0x80) {
     temperature = -temperature;
   }
 
-  Serial.println(humidity * 4);
-  Serial.println(temperature * 4);
-  Serial.println(data[0]);
-  Serial.println(data[1]);
-  Serial.println(data[2]);
-  Serial.println(data[3]);
-  Serial.println(data[4]);
+
+  Serial.println(humidity/10.0);
+  Serial.println(temperature/10.0);
 }
 
+uint8_t readDHT22byte() {
+  uint8_t dataByte;
+  for(uint8_t i=0; i<8; i++) {
+    while(!myDigitalRead(DHT22_PIN));      
+    delayMicroseconds(50);
+
+    if(myDigitalRead(DHT22_PIN)) dataByte = (dataByte<<1)|(0x01);
+    else dataByte = (dataByte<<1);  
+
+    while(myDigitalRead(DHT22_PIN));   
+  }
+  return dataByte;
+}
+
+/*
 ISR(TIMERO_COMPB_vect) {
-	unsigned long m = timer0_millis;
+  myMillis++;
+	
+  unsigned long m = timer0_millis;
 	unsigned char f = timer0_fract;
 
 	m += MILLIS_INC;
@@ -90,3 +101,4 @@ ISR(TIMERO_COMPB_vect) {
 	timer0_millis = m;
 	timer0_overflow_count++;
 }
+*/
