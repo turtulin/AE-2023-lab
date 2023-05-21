@@ -80,3 +80,21 @@ void readDHT22(uint8_t pin) {
   Serial.print("Humidity: ");
   Serial.println(humidity);
 }
+
+ISR(TIMERO_COMPB_vect) {
+  myMillis++;
+	
+  unsigned long m = timer0_millis;
+	unsigned char f = timer0_fract;
+
+	m += MILLIS_INC;
+	f += FRACT_INC;
+	if (f >= FRACT_MAX) {
+		f -= FRACT_MAX;
+		m += 1;
+	}
+
+	timer0_fract = f;
+	timer0_millis = m;
+	timer0_overflow_count++;
+}
