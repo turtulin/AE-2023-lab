@@ -11,13 +11,19 @@ unsigned char timer0_fract;
 */
 
 #define MICROSECONDS_PER_TIMER0_OVERFLOW (clockCyclesToMicroseconds(64 * 256))
+
 #define DHT22_PIN 2
+#define DHT22_BIT (1 << DHT22_PIN)
+
 #define POT_PIN 0
+
+#define RELAY_PIN 3
+#define RELAY_BIT (1 << RELAY_PIN)
 
 //to obtain more generic functions, I could add controls to include PORTB and PORTC
 //pass bitmask as argument
 #define myDigitalWrite(n,level) (level == HIGH? (PORTD |= n) : (PORTD &= ~n))
-#define myPinMode(n,mode) (mode == OUTPUT? (DDRD |= n) : (DDRD &= ~n)); \ 
+#define myPinMode(n,mode) (mode == OUTPUT ? (DDRD |= n) : (DDRD &= ~n)); \ 
 (mode == INPUT_PULLUP? (PORTD |= (1 << n)) : (NULL))
 #define myPortInputRegister(port) ((volatile uint8_t *)(__LPM_word_enhanced__(port_to_input_PGM + (port))))
 
@@ -38,37 +44,40 @@ void loop() {
   myReadDHT22(DHT22_PIN);
   delay(2000);
   myAnalogRead(POT_PIN);
+  delay(2000);
+  myDigitalWrite(RELAY_BIT,HIGH);
+  delay(4000);
+  myDigitalWrite(RELAY_BIT,LOW);
 }
 
 
 void myReadDHT22(uint8_t pin) {
   uint8_t data[5] = {0, 0, 0, 0, 0};
-  uint8_t myDHTBit = (1 << pin);
 
   //start signal
-  myPinMode(myDHTBit, OUTPUT);             
-  myDigitalWrite(myDHTBit, LOW);           
+  myPinMode(DHT22_BIT, OUTPUT);             
+  myDigitalWrite(DHT22_BIT, LOW);           
   delayMicroseconds(1000);           
-  myDigitalWrite(myDHTBit, HIGH);          
+  myDigitalWrite(DHT22_BIT, HIGH);          
   delayMicroseconds(40);             
 
   //wait for response signal
-  myPinMode(myDHTBit, INPUT);              
-  while(myDigitalRead(myDHTBit));          
-  while(!myDigitalRead(myDHTBit));         
-  while(myDigitalRead(myDHTBit));      
+  myPinMode(DHT22_BIT, INPUT);              
+  while(myDigitalRead(DHT22_BIT));          
+  while(!myDigitalRead(DHT22_BIT));         
+  while(myDigitalRead(DHT22_BIT));      
 
   //clear interrupt to read data correctly
   cli();
   for(uint8_t i = 0; i < 5; i++) {
     for(uint8_t j = 0; j < 8; j++) {
-      while(!myDigitalRead(myDHTBit));      
+      while(!myDigitalRead(DHT22_BIT));      
       delayMicroseconds(50);
 
       data[i] = (data[i] << 1);
-      if(myDigitalRead(myDHTBit)) data[i] |= (0x01);
+      if(myDigitalRead(DHT22_BIT)) data[i] |= (0x01);
 
-      while(myDigitalRead(myDHTBit));   
+      while(myDigitalRead(DHT22_BIT));   
     }
   }
   sei();
