@@ -1,19 +1,7 @@
-/*
-#include "wiring_private.h"
-
-#define MICROSECONDS_PER_TIMER0_OVERFLOW (clockCyclesToMicroseconds(64 * 256))
-#define MILLIS_INC (MICROSECONDS_PER_TIMER0_OVERFLOW / 1000)
-#define FRACT_INC ((MICROSECONDS_PER_TIMER0_OVERFLOW % 1000) >> 3)
-#define FRACT_MAX (1000 >> 3)
-
-extern volatile unsigned long timer0_overflow_count;
-extern volatile unsigned long timer0_millis;
-unsigned char timer0_fract;
-*/
-
 #define DHT22_PIN 2
 
 //to obtain more generic functions, I could add controls to include PORTB and PORTC
+//pass bitmask as argument
 #define myDigitalWrite(n,level) (level == HIGH? (PORTD |= n) : (PORTD &= ~n))
 #define myPinMode(n,mode) (mode == OUTPUT? (DDRD |= n) : (DDRD &= ~n)); \ 
 (mode == INPUT_PULLUP? (PORTD |= (1 << n)) : (NULL))
@@ -23,11 +11,9 @@ int myDigitalRead(uint8_t n) { if (*myPortInputRegister(PORTD) & n) return HIGH;
 
 float temperature;
 float humidity;
-//uint32_t myMillis = 0;
 
 void setup() {
   Serial.begin(9600);
-  //TIMSK0 = 0x4;
 }
 
 void loop() {
@@ -82,23 +68,3 @@ void readDHT22(uint8_t pin) {
   Serial.print("Humidity: ");
   Serial.println(humidity);
 }
-
-/*
-ISR(TIMERO_COMPB_vect) {
-  myMillis++;
-	
-  unsigned long m = timer0_millis;
-	unsigned char f = timer0_fract;
-
-	m += MILLIS_INC;
-	f += FRACT_INC;
-	if (f >= FRACT_MAX) {
-		f -= FRACT_MAX;
-		m += 1;
-	}
-
-	timer0_fract = f;
-	timer0_millis = m;
-	timer0_overflow_count++;
-}
-*/
