@@ -1,7 +1,6 @@
 /*
 #include "wiring_private.h"
 
-#define MICROSECONDS_PER_TIMER0_OVERFLOW (clockCyclesToMicroseconds(64 * 256))
 #define MILLIS_INC (MICROSECONDS_PER_TIMER0_OVERFLOW / 1000)
 #define FRACT_INC ((MICROSECONDS_PER_TIMER0_OVERFLOW % 1000) >> 3)
 #define FRACT_MAX (1000 >> 3)
@@ -11,7 +10,9 @@ extern volatile unsigned long timer0_millis;
 unsigned char timer0_fract;
 */
 
+#define MICROSECONDS_PER_TIMER0_OVERFLOW (clockCyclesToMicroseconds(64 * 256))
 #define DHT22_PIN 2
+#define POT_PIN 0
 
 //to obtain more generic functions, I could add controls to include PORTB and PORTC
 //pass bitmask as argument
@@ -24,6 +25,7 @@ int myDigitalRead(uint8_t n) { if (*myPortInputRegister(PORTD) & n) return HIGH;
 
 float temperature;
 float humidity;
+float soilHum;
 //uint32_t myMillis = 0;
 
 void setup() {
@@ -32,12 +34,14 @@ void setup() {
 }
 
 void loop() {
-  delay(3000);
-  readDHT22(DHT22_PIN);
+  delay(2000);
+  myReadDHT22(DHT22_PIN);
+  delay(2000);
+  myAnalogRead(POT_PIN);
 }
 
 
-void readDHT22(uint8_t pin) {
+void myReadDHT22(uint8_t pin) {
   uint8_t data[5] = {0, 0, 0, 0, 0};
   uint8_t myDHTBit = (1 << pin);
 
@@ -61,8 +65,8 @@ void readDHT22(uint8_t pin) {
       while(!myDigitalRead(myDHTBit));      
       delayMicroseconds(50);
 
-      if(myDigitalRead(myDHTBit)) data[i] = (data[i] << 1) | (0x01);
-      else data[i] = (data[i] << 1);  
+      data[i] = (data[i] << 1);
+      if(myDigitalRead(myDHTBit)) data[i] |= (0x01);
 
       while(myDigitalRead(myDHTBit));   
     }
@@ -82,6 +86,19 @@ void readDHT22(uint8_t pin) {
   Serial.println(temperature);
   Serial.print("Humidity: ");
   Serial.println(humidity);
+}
+
+// Define the ADC channel to be used (0-7)
+
+// Function to perform analog-to-digital conversion
+void myAnalogRead(uint8_t pin)
+{
+  ADMUX = (ADMUX & 0xF8) | (pin & 0x07);
+  ADCSRA |= (1 << ADSC);
+  while (ADCSRA & (1 << ADSC));
+  soilHum = ADC * (100.0 / 1023.0);
+  Serial.print("Soil Humidity: ");
+  Serial.println(soilHum);
 }
 
 /*
