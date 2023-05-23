@@ -9,14 +9,14 @@
       "id": "dht1",
       "top": -110.1,
       "left": 109.8,
-      "attrs": { "temperature": "15", "humidity": "70" }
+      "attrs": { "temperature": "-29", "humidity": "18.5" }
     },
     {
       "type": "wokwi-slide-potentiometer",
       "id": "pot1",
       "top": 97.17,
-      "left": 10.55,
-      "attrs": { "travelLength": "15" }
+      "left": 11.21,
+      "attrs": { "travelLength": "13" }
     },
     { "type": "wokwi-relay-module", "id": "relay1", "top": -59.28, "left": -34.93, "attrs": {} }
   ],
@@ -24,7 +24,7 @@
     [ "dht1:SDA", "nano:2", "green", [ "v10.7", "h-0.78" ] ],
     [ "dht1:VCC", "nano:5V", "red", [ "v99.71", "h-60.13" ] ],
     [ "pot1:GND", "nano:GND.2", "black", [ "v-116.24", "h-124.49" ] ],
-    [ "pot1:SIG", "nano:A0", "green", [ "h0" ] ],
+    [ "pot1:SIG", "nano:A0", "blue", [ "h0" ] ],
     [ "pot1:VCC", "nano:5V", "red", [ "h-0.07", "v-35.75", "h55.81" ] ],
     [ "relay1:VCC", "nano:5V", "red", [ "h-32.25", "v144.79", "h132.43" ] ],
     [ "relay1:GND", "nano:GND.2", "black", [ "h-13.33", "v54.39", "h112.92" ] ],
