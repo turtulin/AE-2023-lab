@@ -6,29 +6,31 @@
 #define RELAY_PIN 3
 #define RELAY_BIT (1 << RELAY_PIN)
 
+#define livMin 30
+#define livMax 70
+
 #define myDigitalWrite(n,level) (level == HIGH? (PORTD |= n) : (PORTD &= ~n))
 #define myPinMode(n,mode) (mode == OUTPUT ? (DDRD |= n) : (DDRD &= ~n)); \ 
 (mode == INPUT_PULLUP? (PORTD |= (1 << n)) : (NULL))
 #define myPortInputRegister(port) ((volatile uint8_t *)(__LPM_word_enhanced__(port_to_input_PGM + (port))))
 
-int myDigitalRead(uint8_t n) { if(*myPortInputRegister(PORTD)&n) return HIGH; return LOW; }
+bool myDigitalRead(uint8_t n) { if(*myPortInputRegister(PORTD)&n) return 1; return 0; }
 
 float temperature;
 float humidity;
 float soilHum;
 
 void setup() {
-  Serial.begin(9600);
 }
 
 void loop() {
   delay(2000);
   myReadDHT22(DHT22_PIN);
-  delay(2000);
+  delay(1000);
   myAnalogRead(POT_PIN);
-  delay(2000);
+  delay(1000);
   myDigitalWrite(RELAY_BIT,HIGH);
-  delay(4000);
+  delay(1000);
   myDigitalWrite(RELAY_BIT,LOW);
 }
 
@@ -68,19 +70,12 @@ void myReadDHT22(uint8_t pin) {
       temperature = -temperature;
     }
   }
-
-  Serial.print("Temperature: ");
-  Serial.println(temperature);
-  Serial.print("Humidity: ");
-  Serial.println(humidity);
 }
 
 void myAnalogRead(uint8_t pin)
 {
-  ADMUX = (ADMUX & 0xF8) | (pin & 0x07);
+  ADMUX = (pin & 0xF8) | (pin & 0x07);
   ADCSRA |= (1 << ADSC);
   while (ADCSRA & (1 << ADSC));
   soilHum = ADC * (100.0 / 1023.0);
-  Serial.print("Soil Humidity: ");
-  Serial.println(soilHum);
 }
