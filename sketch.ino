@@ -1,3 +1,4 @@
+// Definisco bit e pin componenti
 #define DHT22_PIN 2
 #define DHT22_BIT (1 << DHT22_PIN)
 
@@ -10,9 +11,11 @@
 #define livMin 30
 #define livMax 70
 
-// Intervalli in secondi tra le letture dei sensori (successivamente inseriti dall'utente, almeno una lettura al giorno)
+// Intervalli in secondi tra le letture dei sensori (successivamente inseriti dall'utente)
+// e intervallo giornaliero
 #define intervalDHT22 7200
 #define intervalPot 3600
+#define intervalDay 86400
 
 // Passo bitmask come argomento n
 #define myDigitalWrite(n,level) (level == HIGH? (PORTD |= n) : (PORTD &= ~n))
@@ -22,10 +25,12 @@
 
 bool myDigitalRead(uint8_t n) { if(*myPortInputRegister(PORTD)&n) return 1; return 0; }
 
-volatile uint16_t counterDHT22 = 0;
-volatile uint16_t counterPot = 0;
-volatile uint16_t counterRel = 0;
+// Contatori per intervalli tra le letture dei sensori e contatore giornaliero
+volatile uint32_t counterDHT22 = 0;
+volatile uint32_t counterPot = 0;
+volatile uint32_t counterDay = 0;
 
+// Variabili globali per memorizzare valori misurazioni
 float temperature;
 float humidity;
 float soilHum;
@@ -34,10 +39,11 @@ void setup() {
   cli(); 
   TCCR1A = 0; // Azzero il registro di controllo A del timer 1
   TCCR1B = 0; // Azzero il registro di controllo B del timer 1
-  TCNT1 = 0; // Azzera il registro di conteggio del timer 1
+  TCNT1 = 0; // Azzero il registro di conteggio del timer 1
   OCR1A = 15624; // Registro di confronto per interrupt ogni secondo
   TCCR1B |= (1 << WGM12); // Abilito la modalità di confronto CTC
-  TCCR1B |= (1 << CS12) | (1 << CS10); // Imposto il prescaler a 1024
+  //TCCR1B = (TCCR1B & 0xF8) | 0x01; // Simulazione giornata con prescaler a 1
+  TCCR1B = (TCCR1B & 0xF8) | 0x05; // Imposto il prescaler a 1024
   TIMSK1 |= (1 << OCIE1A); // Abilito l'interrupt di confronto A del timer 1
   sei();
 }
@@ -45,7 +51,7 @@ void setup() {
 void loop() {
 }
 
-// Funzione per leggere il DHT22 che opera in background
+// Funzione per leggere il DHT22 in background
 void myReadDHT22(uint8_t pin) {
   uint8_t data[5] = {0, 0, 0, 0, 0};
 
@@ -107,5 +113,10 @@ ISR(TIMER1_COMPA_vect) {
   if(counterPot >= intervalPot) {
     counterPot = 0;
     myAnalogRead(POT_PIN);
-  }  
+  }
+
+  counterDay++;
+  if(counterDay >= intervalDay) {
+    counterDay = 0;
+  }
 }
