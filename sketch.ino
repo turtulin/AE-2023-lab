@@ -26,9 +26,9 @@
 bool myDigitalRead(uint8_t n) { if(*myPortInputRegister(PORTD)&n) return 1; return 0; }
 
 // Contatori per intervalli tra le letture dei sensori e contatore giornaliero
-volatile uint32_t counterDHT22 = 0;
-volatile uint32_t counterPot = 0;
-volatile uint32_t counterDay = 0;
+volatile uint32_t counterDHT22 = intervalDHT22;
+volatile uint32_t counterPot = intervalPot;
+volatile uint32_t counterDay = intervalDay;
 
 // Variabili globali per memorizzare valori misurazioni
 float temperature;
@@ -103,20 +103,17 @@ void myAnalogRead(uint8_t pin)
 }
 
 ISR(TIMER1_COMPA_vect) {
-  counterDHT22++;
-  if(counterDHT22 >= intervalDHT22) {
-    counterDHT22 = 0;
+  if(--counterDHT22 == 0) {
+    counterDHT22 = intervalDHT22;
     myReadDHT22(DHT22_PIN);
   }
   
-  counterPot++;
-  if(counterPot >= intervalPot) {
-    counterPot = 0;
+  if(--counterPot == 0) {
+    counterPot = intervalPot;
     myAnalogRead(POT_PIN);
   }
 
-  counterDay++;
-  if(counterDay >= intervalDay) {
-    counterDay = 0;
+  if(--counterDay == 0) {
+    counterDay = intervalDay;
   }
 }
