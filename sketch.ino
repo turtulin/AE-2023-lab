@@ -36,16 +36,12 @@ float humidity;
 float soilHum;
 
 void setup() {
-  cli(); 
   TCCR1A = 0; // Azzero il registro di controllo A del timer 1
-  TCCR1B = 0; // Azzero il registro di controllo B del timer 1
-  TCNT1 = 0; // Azzero il registro di conteggio del timer 1
   OCR1A = 15624; // Registro di confronto per interrupt ogni secondo
   TCCR1B |= (1 << WGM12); // Abilito la modalità di confronto CTC
-  //TCCR1B = (TCCR1B & 0xF8) | 0x01; // Simulazione giornata con prescaler a 1
   TCCR1B = (TCCR1B & 0xF8) | 0x05; // Imposto il prescaler a 1024
+  //TCCR1B = (TCCR1B & 0xF8) | 0x01; // Simulazione giornata con prescaler a 1
   TIMSK1 |= (1 << OCIE1A); // Abilito l'interrupt di confronto A del timer 1
-  sei();
 }
 
 void loop() {
