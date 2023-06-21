@@ -1,8 +1,39 @@
 {
   "version": 1,
-  "author": "Marta Musso",
+  "author": "Anonymous maker",
   "editor": "wokwi",
-  "parts": [ { "type": "wokwi-arduino-nano", "id": "nano", "top": 0, "left": 0, "attrs": {} } ],
-  "connections": [],
+  "parts": [
+    { "type": "wokwi-arduino-nano", "id": "nano", "top": 31.74, "left": -60.1, "attrs": {} },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht1",
+      "top": -110.1,
+      "left": 109.8,
+      "attrs": { "temperature": "15", "humidity": "70" }
+      "attrs": { "temperature": "-29", "humidity": "18.5" }
+    },
+    {
+      "type": "wokwi-slide-potentiometer",
+      "id": "pot1",
+      "top": 97.17,
+      "left": 10.55,
+      "attrs": { "travelLength": "15" }
+      "left": 11.21,
+      "attrs": { "travelLength": "13" }
+    },
+    { "type": "wokwi-relay-module", "id": "relay1", "top": -59.28, "left": -34.93, "attrs": {} }
+  ],
+  "connections": [
+    [ "dht1:SDA", "nano:2", "green", [ "v10.7", "h-0.78" ] ],
+    [ "dht1:VCC", "nano:5V", "red", [ "v99.71", "h-60.13" ] ],
+    [ "pot1:GND", "nano:GND.2", "black", [ "v-116.24", "h-124.49" ] ],
+    [ "pot1:SIG", "nano:A0", "green", [ "h0" ] ],
+    [ "pot1:SIG", "nano:A0", "blue", [ "h0" ] ],
+    [ "pot1:VCC", "nano:5V", "red", [ "h-0.07", "v-35.75", "h55.81" ] ],
+    [ "relay1:VCC", "nano:5V", "red", [ "h-32.25", "v144.79", "h132.43" ] ],
+    [ "relay1:GND", "nano:GND.2", "black", [ "h-13.33", "v54.39", "h112.92" ] ],
+    [ "relay1:IN", "nano:3", "green", [ "h-6.24", "v36.71", "h98.14" ] ],
+    [ "dht1:GND", "nano:GND.2", "black", [ "v19.31", "h-88.35", "v0.59" ] ]
+  ],
   "dependencies": {}
 }
